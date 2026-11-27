@@ -1,0 +1,5 @@
+work/
+voices/
+*.log
+__pycache__/
+.env
