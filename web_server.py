@@ -141,15 +141,26 @@ class Handler(BaseHTTPRequestHandler):
         except ValueError:
             return default
 
+    def _reject(self, code):
+        # No Windows, fechar a conexão com o corpo ainda não lido aborta o socket (WinError 10053)
+        # e o cliente pode não receber o status. Descarta o corpo (até MAX_BODY) antes de responder.
+        try:
+            n = int(self.headers.get("Content-Length", 0) or 0)
+        except ValueError:
+            n = 0
+        if 0 < n <= MAX_BODY:
+            self.rfile.read(n)
+        self.send_error(code)
+
     def do_POST(self):
         path = self.path.split("?")[0]
         if not path.startswith(("/api/", "/rpc/")) or not self._local() or not self._authorized():
-            return self.send_error(403)
+            return self._reject(403)
         if path.startswith("/rpc/"):
             # Síncrono: o gancho espera a resposta (o pedido de permissão pode esperar o clique por minutos)
             fn = HUB.rpc.get(path[5:])
             if not fn:
-                return self.send_error(404)
+                return self._reject(404)
             payload = self._body({})
             try:
                 out = fn(payload)
