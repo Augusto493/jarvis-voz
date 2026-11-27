@@ -110,10 +110,10 @@ class TestMcp(unittest.TestCase):
             self.assertIn(n, names)
 
     def test_call_encaminha_ao_jarvis(self):
-        r = self.m.rpc("tools/call", {"name": "orca_send", "arguments": {"workspace": "Jogos PG", "texto": "rode os testes"}})
+        r = self.m.rpc("tools/call", {"name": "orca_send", "arguments": {"workspace": "Loja Virtual", "texto": "rode os testes"}})
         self.assertFalse(r["result"]["isError"])
         self.assertEqual(CALLS[-1]["name"], "orca_send")
-        self.assertEqual(CALLS[-1]["arg"], "Jogos PG | rode os testes")
+        self.assertEqual(CALLS[-1]["arg"], "Loja Virtual | rode os testes")
         self.assertEqual(CALLS[-1]["args"]["texto"], "rode os testes")
 
     def test_memoria(self):
@@ -148,7 +148,7 @@ class TestBrain(unittest.TestCase):
     def test_1_abrir_projeto_chama_ferramenta(self):
         CALLS.clear()
         said = []
-        r = self.brain.ask(f"{self.CTX}\n\nAUGUSTO DISSE: abra o projeto meu ape", on_sentence=said.append)
+        r = self.brain.ask(f"{self.CTX}\n\nUSUÁRIO DISSE: abra o projeto meu ape", on_sentence=said.append)
         print(f"\n[abrir] 1ª frase {r['first_sentence']} s, total {r['total']:.2f} s, fala={r['say']!r}, tools={r['tools']}")
         opened = [c for c in CALLS if c["name"] == "open_session"]
         self.assertTrue(opened, f"não chamou open_session: {CALLS}")
@@ -159,7 +159,7 @@ class TestBrain(unittest.TestCase):
     def test_2_pergunta_simples_so_fala(self):
         CALLS.clear()
         said = []
-        r = self.brain.ask(f"{self.CTX}\n\nAUGUSTO DISSE: quanto é sete vezes oito?", on_sentence=said.append)
+        r = self.brain.ask(f"{self.CTX}\n\nUSUÁRIO DISSE: quanto é sete vezes oito?", on_sentence=said.append)
         print(f"\n[simples] 1ª frase {r['first_sentence']:.2f} s, total {r['total']:.2f} s, fala={r['say']!r}")
         self.assertEqual(CALLS, [])
         self.assertEqual(r["tools"], [])

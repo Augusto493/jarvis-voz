@@ -9,7 +9,7 @@ Issues e pull requests são bem-vindos, em português ou inglês.
 
 ```
 set JARVIS_SKIP_LLM=1
-py -3.12 -m unittest tests.test_hooks tests.test_brain -v
+py -3.12 -m unittest tests.test_hooks tests.test_brain tests.test_confirm -v
 ```
 
 4. Never commit tokens, keys, logs or personal data.

@@ -95,7 +95,7 @@ def main():
         return  # sem decisão: o Claude Code mostra o pedido normal
     d = {"behavior": decision}
     if decision == "deny":
-        d["message"] = out.get("message") or "O Augusto negou pelo Jarvis."
+        d["message"] = out.get("message") or "O usuário negou pelo Jarvis."
         d["interrupt"] = bool(out.get("interrupt"))
     sys.stdout.write(json.dumps({"hookSpecificOutput": {"hookEventName": "PermissionRequest", "decision": d}}))
     sys.stdout.flush()

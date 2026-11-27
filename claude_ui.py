@@ -1,7 +1,7 @@
 """Controle do app Claude desktop (aba Code) pela árvore de acessibilidade do Windows (UI Automation).
 
 O app é Electron: o conteúdo web aparece como DocumentControl "RootWebArea" e os botões da barra lateral
-têm o nome das sessões ("Meu App", "IDE IA Em execução", ...). A árvore é lida de uma vez só, com cache
+têm o nome das sessões ("Meu App", "Loja Virtual Em execução", ...). A árvore é lida de uma vez só, com cache
 (FindAllBuildCache): percorrer elemento por elemento levava 30 s, assim leva ~0,2 s.
 """
 import difflib
@@ -11,6 +11,8 @@ import unicodedata
 
 import uiautomation as auto
 from uiautomation import uiautomation as _ua
+
+from confirm import find_permission, is_allow
 
 auto.SetGlobalSearchTimeout(2)
 
@@ -189,6 +191,11 @@ class ClaudeApp:
                 out.append(n.name)
         return out
 
+    def permission_request(self, nodes=None):
+        """Botão que approve() vai clicar e o texto do pedido, quando dá para identificar"""
+        nodes = nodes if nodes is not None else self.scan()
+        return find_permission([(n.type, n.name) for n in nodes])
+
     def snapshot(self):
         nodes = self.scan()
         sessions, projects = self.sidebar(nodes)
@@ -316,27 +323,27 @@ class ClaudeApp:
                 pass
         return "mensagem enviada ao Claude" if send else "texto digitado na caixa de mensagem"
 
-    def _click_first(self, prefixes, what):
+    def _click_first(self, wanted, what):
         main = False
         for n in self.scan():
             if n.type == GROUP and n.name == "Painel principal":
                 main = True
             if not main or n.type != BUTTON:
                 continue
-            nn = norm(n.name)
-            if any(nn == p or nn.startswith(p + " ") for p in prefixes):
+            if wanted(n.name):
                 self._press(n)
                 return f"cliquei em {n.name}"
         raise RuntimeError(f"não há nenhum pedido de {what} na tela agora")
 
     def approve(self):
-        return self._click_first(["permitir", "permitir uma vez", "aprovar", "allow", "sim", "yes"], "permissão")
+        return self._click_first(is_allow, "permissão")
 
     def deny(self):
-        return self._click_first(["negar", "recusar", "rejeitar", "deny"], "permissão")
+        deny = ("negar", "recusar", "rejeitar", "deny")
+        return self._click_first(lambda name: any(norm(name) == p or norm(name).startswith(p + " ") for p in deny), "permissão")
 
     def stop(self):
-        return self._click_first(["parar", "interromper", "stop"], "parada")
+        return self._click_first(lambda name: any(norm(name) == p or norm(name).startswith(p + " ") for p in ("parar", "interromper", "stop")), "parada")
 
     # ---------- modelo / esforço do chat ----------
     def _window_nodes(self):

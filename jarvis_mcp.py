@@ -52,7 +52,7 @@ ACTIONS = {
         _obj({"projeto": {**S, "description": "nome do projeto; vazio = sessão nova genérica"}}),
         lambda a: a.get("projeto", "")),
     "send": (
-        "Envia um pedido ao Claude Code na sessão ABERTA (digita e aperta enviar). Escreva o texto como o Augusto "
+        "Envia um pedido ao Claude Code na sessão ABERTA (digita e aperta enviar). Escreva o texto como o usuário "
         "escreveria, claro e completo. AÇÃO SENSÍVEL: o Jarvis pede confirmação por voz antes de enviar; se o "
         "resultado disser que não foi confirmado, não insista.",
         _obj({"texto": {**S, "description": "pedido a enviar"}}, ["texto"]),
@@ -81,15 +81,15 @@ ACTIONS = {
         _obj({"esforco": {**S, "enum": ["Baixo", "Médio", "Alto", "Máximo"]}}, ["esforco"]),
         lambda a: a.get("esforco", "")),
     "approve": (
-        "Clica em Permitir no pedido de permissão aberto no app Claude. Só quando o Augusto pedir claramente. "
+        "Clica em Permitir no pedido de permissão aberto no app Claude. Só quando o usuário pedir claramente. "
         "AÇÃO SENSÍVEL: o Jarvis pede confirmação.",
         _obj(), lambda a: ""),
     "deny": (
-        "Clica em Negar no pedido de permissão aberto no app Claude. Só quando o Augusto pedir claramente. "
+        "Clica em Negar no pedido de permissão aberto no app Claude. Só quando o usuário pedir claramente. "
         "AÇÃO SENSÍVEL: o Jarvis pede confirmação.",
         _obj(), lambda a: ""),
     "stop": (
-        "Interrompe o Claude que está respondendo na sessão aberta. Só quando o Augusto pedir.",
+        "Interrompe o Claude que está respondendo na sessão aberta. Só quando o usuário pedir.",
         _obj(), lambda a: ""),
     "scroll": (
         "Rola a conversa aberta no app Claude.",
@@ -116,7 +116,7 @@ ACTIONS = {
              ["workspace"]),
         lambda a: a.get("workspace", "")),
     "show_in_orca": (
-        "Abre o chat do Jarvis numa aba do Orca. Só quando o Augusto pedir.",
+        "Abre o chat do Jarvis numa aba do Orca. Só quando o usuário pedir.",
         _obj(), lambda a: ""),
 }
 
@@ -127,7 +127,7 @@ MEMORY = {
         _obj({"projeto": {**S, "description": "filtra pelas anotações deste projeto (opcional)"}})),
     "memoria_anotar": (
         "Acrescenta uma anotação datada à memória do Jarvis (nunca apaga nada). Use para lembrar pendências, "
-        "decisões e pedidos do Augusto ('me lembra de...', 'anota que...', tarefa que ficou para depois).",
+        "decisões e pedidos do usuário ('me lembra de...', 'anota que...', tarefa que ficou para depois).",
         _obj({"texto": {**S, "description": "anotação curta, uma linha"},
               "projeto": {**S, "description": "projeto relacionado (opcional)"}}, ["texto"])),
 }

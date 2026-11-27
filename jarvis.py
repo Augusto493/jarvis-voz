@@ -46,8 +46,10 @@ import audio  # noqa: E402
 from claude_ui import ClaudeApp  # noqa: E402
 from orca_app import OrcaApp  # noqa: E402
 from island_ui import IslandUI  # noqa: E402
+from confirm import confirm_words, permission_text  # noqa: E402
 
 CONFIG = {
+    "user_name": "",           # como o Jarvis te chama; vazio = sem nome
     "wake_words": ["jarvis", "jarves", "jarviz", "djarvis", "jarbas", "javis", "jarvi", "charvis", "jervis", "yarvis",
                    "chavis", "jardis", "garvis", "jarvas"],
     "voice": "pt-BR-AntonioNeural",
@@ -76,6 +78,8 @@ CONFIG = {
 cfg_path = os.path.join(HERE, "config.json")
 if os.path.exists(cfg_path):
     CONFIG.update(json.load(open(cfg_path, encoding="utf-8")))
+
+USER_NAME = str(CONFIG.get("user_name") or "").strip()
 
 logging.basicConfig(filename=os.path.join(HERE, "jarvis.log"), level=logging.INFO,
                     format="%(asctime)s %(levelname)s %(message)s", encoding="utf-8")
@@ -319,8 +323,6 @@ voice = Voice()
 # ======================= Confirmação =======================
 SENSITIVE = {"send": "enviar ao Claude", "orca_send": "enviar ao Orca", "approve": "aprovar a permissão", "deny": "negar a permissão"}
 PENDING = {"ev": threading.Event(), "ans": None, "active": False}
-YES = {"sim", "pode", "confirma", "confirmo", "manda", "isso", "claro", "ok", "positivo", "vai", "fechado", "pode mandar", "pode sim"}
-NO = {"nao", "cancela", "cancelar", "deixa", "esquece", "para", "negativo", "nunca"}
 
 
 def resolve_confirm(yes):
@@ -335,7 +337,7 @@ def ask_confirm(text, timeout=25):
     PENDING["ev"].clear()
     if island:
         island.confirm(text)
-    voice.say(text + " Confirma?")
+    voice.say(text.rstrip(".") + ". Se quiser liberar, diga: Jarvis, confirmo. Ou toque em Sim.")
     PENDING["ev"].wait(timeout)
     ans = PENDING["ans"] is True
     PENDING["active"] = False
@@ -344,22 +346,13 @@ def ask_confirm(text, timeout=25):
     return ans
 
 
-def confirm_words(text):
-    w = set(norm(text).split())
-    if w & NO:
-        return False
-    if w & YES:
-        return True
-    return None
-
-
 # ======================= Cérebro =======================
-SYSTEM = """Você é Jarvis, o assistente de voz pessoal do Augusto. Você controla o app Claude desktop (aba Code)
+SYSTEM = """Você é Jarvis, o assistente de voz pessoal do usuário. Você controla o app Claude desktop (aba Code)
 no computador dele: as sessões da barra lateral são conversas do Claude Code, cada uma num projeto. Ele também
 usa o app Orca, onde cada workspace tem um agente (Claude, Codex, Antigravity). Você controla os dois do mesmo jeito;
 quando ele disser "no Orca", use as ações orca_*; senão, use as do Claude. Se o nome existir nos dois, pergunte.
 Fale como um humano, em português do Brasil, natural, caloroso e direto, como o Jarvis do Homem de Ferro
-(pode chamá-lo de "Augusto" às vezes, nunca de "senhor"). Sua fala vai para um sintetizador de voz.
+(nunca o chame de "senhor"). Sua fala vai para um sintetizador de voz.
 
 FORMATO DA RESPOSTA (sempre exatamente assim, nesta ordem):
 FALA: <o que dizer em voz alta: uma linha, frases curtas, sem markdown, listas, emojis ou caminhos de arquivo;
@@ -370,7 +363,7 @@ OBSERVAR: <sim ou nao>
 Ações (executadas na ordem), cada uma {"tool": "...", "arg": "..."}:
 - open_session: arg = nome da sessão ou projeto como ouvido (o sistema acha o mais parecido, inclusive dentro de projetos recolhidos)
 - new_session: arg = nome do projeto, ou "" para uma sessão nova genérica
-- send: arg = texto a enviar ao Claude Code na sessão aberta, escrito como o Augusto escreveria, claro e completo
+- send: arg = texto a enviar ao Claude Code na sessão aberta, escrito como o usuário escreveria, claro e completo
 - type: arg = texto para só digitar, sem enviar
 - read_conversation: lê as últimas mensagens da sessão aberta
 - set_model: arg = "Opus", "Sonnet", "Haiku" ou "Fable" — troca o modelo do chat aberto
@@ -388,7 +381,7 @@ Regras:
 - OBSERVAR sim quando precisar ver o resultado das ações antes de concluir (ex.: ler uma conversa). Nesse caso a FALA
   deve ser vazia ou bem curta ("Deixa eu ver."); depois chega o RESULTADO e você responde de novo no mesmo formato.
 - "como está o projeto X" / "o que o Claude fez" → open_session X (se não for a aberta) e read_conversation, OBSERVAR sim;
-  depois explique como um colega contando o andamento: o que foi feito, o que está rolando, se algo espera o Augusto.
+  depois explique como um colega contando o andamento: o que foi feito, o que está rolando, se algo espera o usuário.
   Fale do Claude na terceira pessoa e nunca copie trechos da conversa.
 - "peça para o Claude fazer Y no X" → open_session X, send Y; confirme numa frase.
 - Só use approve, deny e stop quando ele pedir claramente.
@@ -399,16 +392,18 @@ Regras:
 - Se não entender, pergunte curto. Se for só conversa, responda sem ações.
 
 Exemplos:
-Augusto: "como está o Meu App?"
+Usuário: "como está o Meu App?"
 FALA: Deixa eu ver.
 ACOES: [{"tool": "open_session", "arg": "Meu App"}, {"tool": "read_conversation", "arg": ""}]
 OBSERVAR: sim
 
-Augusto: "muda o modelo pra Sonnet"
+Usuário: "muda o modelo pra Sonnet"
 FALA: Pronto, trocando para o Sonnet.
 ACOES: [{"tool": "set_model", "arg": "Sonnet"}]
 OBSERVAR: nao
 """
+if USER_NAME:
+    SYSTEM += f"\nO nome do usuário é {USER_NAME}; pode chamá-lo assim às vezes.\n"
 
 
 class Brain:
@@ -580,7 +575,7 @@ def handle(command):
                 log.info("latência até começar a falar: %.2f s", first_spoken["t"])
             voice.say(sentence)
 
-        reply = brain.ask(f"{fresh_context()}\n\nAUGUSTO DISSE: {command}", on_sentence=speak_now)
+        reply = brain.ask(f"{fresh_context()}\n\nUSUÁRIO DISSE: {command}", on_sentence=speak_now)
         for _round in range(3):
             log.info("resposta: %s", reply)
             results, observe = [], reply.get("observe", False)
@@ -592,10 +587,22 @@ def handle(command):
                     continue
                 if tool in SENSITIVE:
                     voice.wait()
-                    what = f"Vou {SENSITIVE[tool]}" + (f": {arg[:140]}." if arg else ".")
+                    req = None
+                    if tool == "approve":  # diz o que está na tela, não o texto que o modelo escreveu
+                        req = read_permission()
+                        what = f"Vou aprovar a permissão: {permission_text(req)}."
+                    elif tool == "deny":
+                        what = "Vou negar a permissão."
+                    else:
+                        what = f"Vou {SENSITIVE[tool]}" + (f": {arg[:140]}." if arg else ".")
                     if not ask_confirm(what):
-                        results.append(f"{tool}: o Augusto NÃO confirmou; não foi executado")
+                        results.append(f"{tool}: o usuário NÃO confirmou; não foi executado")
                         log.info("ação %s cancelada", tool)
+                        continue
+                    if tool == "approve" and read_permission() != req:
+                        results.append(f"{tool}: o pedido na tela mudou durante a confirmação; não foi executado")
+                        log.info("ação %s cancelada: o pedido mudou", tool)
+                        observe = True
                         continue
                 try:
                     with ui_lock:
@@ -609,7 +616,7 @@ def handle(command):
                 break
             set_status("pensando")
             reply = brain.ask("RESULTADO DAS AÇÕES:\n" + "\n".join(results) + "\n\n" + build_context()
-                              + "\n\nAgora responda ao Augusto no formato. Só inclua novas ações se ainda faltar algo.",
+                              + "\n\nAgora responda ao usuário no formato. Só inclua novas ações se ainda faltar algo.",
                               on_sentence=voice.say)
         STATE["event"] = ""
         if island:
@@ -626,7 +633,17 @@ def handle(command):
         set_status("ouvindo")
 
 
-APPROVAL = {"key": None}
+APPROVAL = {"key": None, "req": None}
+
+
+def read_permission(nodes=None):
+    """Pedido de permissão visível no Claude (None se não deu para ler)"""
+    try:
+        with ui_lock:
+            return ui.permission_request(nodes)
+    except Exception as e:
+        log.warning("ler pedido de permissão: %s", e)
+        return None
 
 
 # ======================= Vigia de tarefas =======================
@@ -647,7 +664,7 @@ def watch_sessions():
                 sessions, _ = ui.sidebar(nodes)
                 btns = ui.pending_buttons(nodes)
                 cur = ui.current_session(nodes)
-            check_approval(btns, cur, ostates_hint=None)
+            check_approval(btns, cur, read_permission(nodes) if btns else None)
             running |= {("Claude", x["name"]) for x in sessions if x["status"] == "Em execução"}
         except Exception:
             pass
@@ -677,16 +694,17 @@ def watch_sessions():
             island.lists(cl, orl)
 
 
-def check_approval(btns, cur, ostates_hint=None):
+def check_approval(btns, cur, req=None):
     """Pedido de permissão do Claude (botões Permitir/Negar visíveis): mostra o cartão Negar/Permitir na ilha"""
     allow = [b for b in btns if norm(b).split(" ")[0] in ("permitir", "aprovar", "allow")]
     if allow:
-        key = ("Claude", cur)
+        key = ("Claude", cur, permission_text(req))
         if APPROVAL["key"] != key:
-            APPROVAL["key"] = key
-            log.info("pedindo permissão: %s", cur)
+            APPROVAL.update(key=key, req=req)
+            log.info("pedindo permissão: %s — %s", cur, key[2])
             if island:
-                island.approval({"w": "Claude", "name": cur or "Claude", "text": "pede sua permissão", "t": time.time()})
+                island.approval({"w": "Claude", "name": cur or "Claude", "text": "pede sua permissão", "t": time.time(),
+                                 "code": key[2]})
                 island.open(hold=True)
     elif APPROVAL["key"] and APPROVAL["key"][0] == "Claude":
         APPROVAL["key"] = None
@@ -700,13 +718,13 @@ def announce_finished(name, where="Claude"):
     if island:
         island.state("done", f"{name} terminou")
         island.open()
-    STATE["event"] = (f"A tarefa '{name}' ({where}) acabou de terminar e você perguntou se o Augusto estava aí. "
+    STATE["event"] = (f"A tarefa '{name}' ({where}) acabou de terminar e você perguntou se o usuário estava aí. "
                       f"Para explicar, use {'orca_status' if where == 'Orca' else 'open_session e read_conversation'}.")
     if STATE["paused"] or mic_muted():
         return  # só a notificação: sem voz
     while STATE["busy"]:
         time.sleep(0.3)
-    voice.say(f"Augusto, o {name} terminou. Você está aí?")
+    voice.say(f"{USER_NAME + ', o' if USER_NAME else 'O'} {name} terminou. Você está aí?")
 
 
 # ======================= Uso do plano ao vivo (para o Codenotch) =======================
@@ -939,7 +957,7 @@ def on_chat(text):
     if island:
         island.msg("user", text)
     if PENDING["active"]:
-        ans = confirm_words(text)
+        ans = confirm_words(text, CONFIG["wake_words"], typed=True)
         if ans is not None:
             return resolve_confirm(ans)
     if STATE["busy"]:
@@ -968,6 +986,9 @@ def on_decide(yes):
     if PENDING["active"]:
         return resolve_confirm(yes)
     try:
+        if yes and read_permission() != APPROVAL["req"]:
+            APPROVAL["key"] = None  # o vigia mostra o pedido atual de novo
+            raise RuntimeError("o pedido na tela mudou; confira e clique de novo")
         with ui_lock:
             (ui.approve if yes else ui.deny)()
         log.info("permissão %s pela ilha", "permitida" if yes else "negada")
@@ -997,7 +1018,9 @@ def on_heard(text, info=None):
     info = info or {}
     log.info("ouvi: %s", text)
     if PENDING["active"]:
-        ans = confirm_words(text)
+        ans = confirm_words(text, CONFIG["wake_words"])
+        if ans and voice.speaking:
+            ans = None  # pode ser o eco da própria pergunta
         if ans is not None:
             if island:
                 island.heard(text.strip())

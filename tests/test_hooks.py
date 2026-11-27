@@ -152,7 +152,7 @@ class HooksTest(unittest.TestCase):
         self.assertEqual(self.bridge.session("tr")["last"], "Pronto, corrigi o bug.")
 
     def test_orca_from_env(self):
-        run_hook(base("UserPromptSubmit", sid="orca1", cwd=r"C:\x\jogos-pg", prompt="x"),
+        run_hook(base("UserPromptSubmit", sid="orca1", cwd=r"C:\x\loja-virtual", prompt="x"),
                  env={"ORCA_PANE_KEY": "p1", "ORCA_WORKTREE_ID": "w1"})
         self.assertEqual(self.bridge.session("orca1")["w"], "Orca")
 

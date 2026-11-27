@@ -274,7 +274,7 @@ class HookBridge:
         if res == "allow":
             return {"decision": "allow"}
         if res == "deny":
-            return {"decision": "deny", "message": "O Augusto negou pelo Jarvis.", "interrupt": False}
+            return {"decision": "deny", "message": "O usuário negou pelo Jarvis.", "interrupt": False}
         return {}  # sem decisão (soltou ou expirou): o Claude Code mostra o pedido no app
 
     def decide(self, pid, yes):
