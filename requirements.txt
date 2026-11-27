@@ -1,0 +1,16 @@
+uiautomation
+comtypes
+pycaw
+sounddevice
+numpy
+scipy
+miniaudio
+faster-whisper
+openwakeword
+onnxruntime
+piper-tts
+edge-tts
+livekit
+pystray
+Pillow
+pywebview

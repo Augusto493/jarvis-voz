@@ -1,5 +1,7 @@
 # Jarvis — controle o Claude Code por voz
 
+**English:** a Windows tray voice assistant (Brazilian Portuguese) that drives the Claude Code desktop app: open sessions, hear project status, send prompts and approve permissions by voice. Early stage; contributions welcome.
+
 Assistente de voz que fica na bandeja do Windows, ouve você o tempo todo e controla o app **Claude desktop (aba Code)**:
 abre sessões, conta como está cada projeto, manda pedidos para o Claude, aprova permissões. Responde falando, em português.
 
@@ -93,3 +95,11 @@ py -3.12 jarvis.py --say "Jarvis, como está o projeto Meu App?"
 - Aberta: abas (visão geral / chat / nova sessão), cartão esquerdo com o personagem + sessão em andamento, cartão direito com as sessões do Claude e do Orca (clique abre a sessão), cartão **Negar / Permitir** para permissões do Claude, chat e criação de sessão.
 - O personagem é original (o Mochi e o nome são de uso reservado do autor do Coucou). Código base: Louis-CFM/coucou, `windows/src/style.css` (MIT).
 - Permissões do Orca: aparecem como pílula laranja (esperando); o botão abre o workspace, não aprova sozinho.
+
+## Instalação (Windows, Python 3.12)
+
+```
+py -3.12 -m pip install -r requirements.txt
+```
+
+O arquivo da voz Piper não vem no repositório: baixe `pt_BR-faber-medium.onnx` e o `.onnx.json` do projeto Piper Voices e coloque em `voices/` (ou use `"tts": "edge"` no `config.json`). Confira a licença da voz antes de redistribuir. A lista de dependências foi montada a partir dos imports e ainda não foi testada numa instalação limpa.
