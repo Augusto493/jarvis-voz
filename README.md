@@ -7,7 +7,7 @@ abre sessões, conta como está cada projeto, manda pedidos para o Claude, aprov
 
 ## Ilha (interface)
 
-Uma pílula no topo da tela, no estilo da ilha do [Coucou](https://github.com/Louis-CFM/coucou) (código MIT, usado só como referência: a arquitetura de ilha fechada/aberta e o personagem em canvas cujos olhos seguem o cursor). O personagem é um orbe original; o Mochi, o nome e os sons do Coucou têm direitos reservados e não foram usados.
+Uma pílula no topo da tela, no estilo da ilha do [Coucou](https://github.com/Louis-CFM/coucou) (código MIT; o layout e as animações da ilha derivam dele, ver [avisos de terceiros](THIRD_PARTY_NOTICES.md)). O personagem é um orbe original; o Mochi, o nome e os sons do Coucou têm direitos reservados e não foram usados.
 A ilha fica fechada (só o bonequinho e o estado). Ela abre **por clique** ou **sozinha apenas quando uma tarefa termina**; passar o mouse não abre. Aberta, mostra a conversa em bolhas, as sessões do Claude e do Orca, uma caixa para escrever ao Jarvis e os botões Pausar, Calar e Recolher. Alertas (microfone mudo, erros) aparecem só dentro dela. Ações como enviar ao Claude/Orca ou aprovar pedem confirmação (voz, texto ou botão).
 
 O mesmo chat abre numa aba do Orca: menu da bandeja → "Abrir aba no Orca", ou peça por voz.
